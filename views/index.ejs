@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar & Lunar Calendar</title>
+    <link rel="stylesheet" href="/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <a href="/?year=<%= prevYear %>&month=<%= prevMonth %>" class="nav-btn">&lt;</a>
+            <h1>
+                <%= monthName %>
+                    <%= year %>
+            </h1>
+            <a href="/?year=<%= nextYear %>&month=<%= nextMonth %>" class="nav-btn">&gt;</a>
+        </header>
+
+        <div class="calendar-grid">
+            <div class="weekday">Sun</div>
+            <div class="weekday">Mon</div>
+            <div class="weekday">Tue</div>
+            <div class="weekday">Wed</div>
+            <div class="weekday">Thu</div>
+            <div class="weekday">Fri</div>
+            <div class="weekday">Sat</div>
+
+            <% calendarDays.forEach(day=> { %>
+                <% if (day===null) { %>
+                    <div class="day empty"></div>
+                    <% } else { %>
+                        <div class="day <%= day.isToday ? 'today' : '' %>">
+                            <span class="solar-date">
+                                <%= day.solarDay %>
+                            </span>
+                            <div class="lunar-info">
+                                <% if (day.term) { %>
+                                    <span class="term">
+                                        <%= day.term %>
+                                    </span>
+                                    <% } %>
+                                        <span class="lunar-date">
+                                            <%= day.lunarDateStr %>
+                                        </span>
+                            </div>
+                        </div>
+                        <% } %>
+                            <% }) %>
+        </div>
+    </div>
+</body>
+
+</html>

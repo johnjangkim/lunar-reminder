@@ -1,0 +1,152 @@
+:root {
+    --bg-color: #f0f4f8;
+    --card-bg: #ffffff;
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --accent: #2563eb;
+    --accent-light: #dbeafe;
+    --today-bg: #eff6ff;
+    --today-border: #3b82f6;
+    --term-color: #ef4444;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.container {
+    width: 90%;
+    max-width: 1000px;
+    background: var(--card-bg);
+    border-radius: 24px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    overflow: hidden;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
+    text-transform: capitalize;
+}
+
+.nav-btn {
+    text-decoration: none;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    transition: background 0.2s;
+}
+
+.nav-btn:hover {
+    background: var(--bg-color);
+    color: var(--text-primary);
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1rem;
+}
+
+.weekday {
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding-bottom: 0.5rem;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+}
+
+.day {
+    aspect-ratio: 1;
+    border-radius: 16px;
+    background: var(--bg-color);
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: default;
+}
+
+.day:not(.empty):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.day.empty {
+    background: transparent;
+}
+
+.day.today {
+    background: var(--today-bg);
+    border: 2px solid var(--today-border);
+    position: relative;
+}
+
+.solar-date {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.lunar-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.lunar-date {
+    opacity: 0.8;
+}
+
+.term {
+    color: var(--term-color);
+    font-size: 0.75rem;
+    margin-bottom: 2px;
+}
+
+@media (max-width: 640px) {
+    .container {
+        padding: 1rem;
+        width: 100%;
+        border-radius: 0;
+        min-height: 100vh;
+        box-shadow: none;
+    }
+
+    .day {
+        border-radius: 10px;
+        padding: 0.5rem;
+    }
+
+    .solar-date {
+        font-size: 1.25rem;
+    }
+
+    .lunar-info {
+        font-size: 0.7rem;
+    }
+}
