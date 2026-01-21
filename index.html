@@ -15,6 +15,7 @@
             <button id="prevBtn" class="nav-btn">&lt;</button>
             <h1 id="monthYearDisplay"></h1>
             <button id="nextBtn" class="nav-btn">&gt;</button>
+            <button id="addReminderBtn" class="nav-btn" style="margin-left: 10px; font-size: 1.2rem;">+</button>
         </header>
 
         <div class="calendar-grid" id="calendarGrid">
@@ -26,6 +27,89 @@
             <div class="weekday">Fri</div>
             <div class="weekday">Sat</div>
             <!-- Days will be injected here by JS -->
+        </div>
+
+        <div class="conversion-divider"></div>
+
+        <div class="conversion-section">
+            <h2>Lunar to Solar Converter</h2>
+            <div class="conversion-form">
+                <div class="form-group">
+                    <label for="lunarYear">Year</label>
+                    <input type="number" id="lunarYear" placeholder="YYYY" min="1900" max="2100">
+                </div>
+                <div class="form-group">
+                    <label for="lunarMonth">Month</label>
+                    <input type="number" id="lunarMonth" placeholder="MM" min="1" max="12">
+                </div>
+                <div class="form-group">
+                    <label for="lunarDay">Day</label>
+                    <input type="number" id="lunarDay" placeholder="DD" min="1" max="30">
+                </div>
+                <div class="form-group checkbox-group">
+                    <label for="isLeap">Leap Month</label>
+                    <input type="checkbox" id="isLeap">
+                </div>
+                <button id="convertBtn">Convert</button>
+            </div>
+            <div id="conversionResult" class="result-display"></div>
+        </div>
+    </div>
+
+    <!-- Reminder Modal -->
+    <div id="reminderModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Add Reminder</h2>
+            <form id="reminderForm">
+                <div class="form-group">
+                    <label for="remTitle">Title</label>
+                    <input type="text" id="remTitle" required placeholder="Event Name">
+                </div>
+                <div class="form-group">
+                    <label>Date Type</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="remType" value="SOLAR" checked> Solar</label>
+                        <label><input type="radio" name="remType" value="LUNAR"> Lunar</label>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div>
+                        <label for="remYear">Year</label>
+                        <input type="number" id="remYear" placeholder="YYYY" value="2024">
+                    </div>
+                    <div>
+                        <label for="remMonth">Month</label>
+                        <input type="number" id="remMonth" placeholder="MM" min="1" max="12" required>
+                    </div>
+                    <div>
+                        <label for="remDay">Day</label>
+                        <input type="number" id="remDay" placeholder="DD" min="1" max="31" required>
+                    </div>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label for="remRepeat">Repeat Annually</label>
+                    <input type="checkbox" id="remRepeat" checked>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="primary-btn">Save</button>
+                    <button type="button" class="secondary-btn" id="cancelRemBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Day Details Modal (View/Delete Events) -->
+    <div id="dayModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeDayModal">&times;</span>
+            <h2 id="dayModalDate"></h2>
+            <div id="eventList" class="event-list">
+                <!-- Events will be populated here -->
+            </div>
+            <div class="form-actions" style="justify-content: center; margin-top: 1rem;">
+                <button type="button" class="secondary-btn" id="closeDayBtn">Close</button>
+            </div>
         </div>
     </div>
 
