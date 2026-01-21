@@ -8,10 +8,5 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "ejs": "^4.0.1",
-    "express": "^5.2.1",
-    "lunar-javascript": "^1.7.7"
-  }
+  "description": ""
 }
