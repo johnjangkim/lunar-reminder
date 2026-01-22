@@ -12,10 +12,13 @@
 <body>
     <div class="container">
         <header>
-            <button id="prevBtn" class="nav-btn">&lt;</button>
+            <div class="nav-controls">
+                <button id="prevBtn" class="nav-btn">&lt;</button>
+                <button id="todayBtn" class="today-btn">Today</button>
+                <button id="nextBtn" class="nav-btn">&gt;</button>
+            </div>
             <h1 id="monthYearDisplay"></h1>
-            <button id="nextBtn" class="nav-btn">&gt;</button>
-            <button id="addReminderBtn" class="nav-btn" style="margin-left: 10px; font-size: 1.2rem;">+</button>
+            <button id="addReminderBtn" class="add-btn">+</button>
         </header>
 
         <div class="calendar-grid" id="calendarGrid">
@@ -27,6 +30,21 @@
             <div class="weekday">Fri</div>
             <div class="weekday">Sat</div>
             <!-- Days will be injected here by JS -->
+        </div>
+
+        <!-- Database Tools Area -->
+        <div
+            style="margin: 2rem 0; padding: 1.5rem; background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); border-radius: 20px; border: 1px solid rgba(255,255,255,0.3); text-align: center;">
+            <h3 style="margin-bottom: 1rem; color: #1e3a8a;">Database Tools</h3>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <button id="migrateDataBtn" class="btn secondary">Migrate Old Local Data</button>
+                <button id="seedHolidaysBtn" class="btn secondary">Register Default Holidays (2024-2030)</button>
+                <button id="exportBtn" class="btn secondary">Export Backup (JSON)</button>
+                <button id="importBtn" class="btn secondary">Import Backup (JSON)</button>
+                <input type="file" id="importFile" style="display: none;" accept=".json">
+            </div>
+            <p style="font-size: 0.8em; color: #6b7280; margin-top: 1rem;">* Use these tools if your old schedules
+                are missing or you want holidays to appear as registered events.</p>
         </div>
 
         <div class="conversion-divider"></div>
@@ -60,8 +78,9 @@
     <div id="reminderModal" class="modal">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
-            <h2>Add Reminder</h2>
+            <h2 id="remModalTitle">Manage Reminder</h2>
             <form id="reminderForm">
+                <input type="hidden" id="remId">
                 <div class="form-group">
                     <label for="remTitle">Title</label>
                     <input type="text" id="remTitle" required placeholder="Event Name">
@@ -87,9 +106,31 @@
                         <input type="number" id="remDay" placeholder="DD" min="1" max="31" required>
                     </div>
                 </div>
-                <div class="form-group checkbox-group">
-                    <label for="remRepeat">Repeat Annually</label>
-                    <input type="checkbox" id="remRepeat" checked>
+                <div class="form-group row">
+                    <div style="flex:1">
+                        <label for="remTime">Time</label>
+                        <input type="time" id="remTime">
+                    </div>
+                    <div style="flex:1">
+                        <label for="remAlert">Alert</label>
+                        <select id="remAlert"
+                            style="width:100%; padding:0.5rem; border:1px solid #ccc; border-radius:4px;">
+                            <option value="none">None</option>
+                            <option value="at_time">At time of event</option>
+                            <option value="1h_before">1 hour before</option>
+                            <option value="1d_before">1 day before</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="remRecurrence">Recurrence</label>
+                    <select id="remRecurrence"
+                        style="width:100%; padding:0.5rem; border:1px solid #ccc; border-radius:4px;">
+                        <option value="NONE">No Repeat</option>
+                        <option value="WEEKLY">Weekly</option>
+                        <option value="MONTHLY">Monthly</option>
+                        <option value="ANNUALLY">Annually</option>
+                    </select>
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="primary-btn">Save</button>
@@ -107,13 +148,42 @@
             <div id="eventList" class="event-list">
                 <!-- Events will be populated here -->
             </div>
-            <div class="form-actions" style="justify-content: center; margin-top: 1rem;">
+            <div class="form-actions" style="justify-content: center; margin-top: 1rem; gap: 1rem;">
+                <button type="button" class="primary-btn" id="addEventFromDayBtn">Add Event</button>
                 <button type="button" class="secondary-btn" id="closeDayBtn">Close</button>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.js"></script>
+    <!-- Custom Alert Modal -->
+    <div id="alertModal" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div style="margin-bottom: 1.5rem;">
+                <h3 id="alertTitle" style="margin: 0; color: var(--accent); font-size: 1.5rem;">Reminder</h3>
+                <p id="alertMessage" style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 1.1rem;"></p>
+            </div>
+            <button id="closeAlertBtn" class="primary-btn" style="width: 100%;">Acknowledge</button>
+        </div>
+    </div>
+
+
+    <!-- Delete Choice Modal -->
+    <div id="deleteChoiceModal" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <h3 style="margin-bottom: 1.5rem; color: #ef4444;">Delete Reminder</h3>
+            <p style="margin-bottom: 2rem; color: var(--text-secondary);">How would you like to delete this event?</p>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <button id="deleteSingleBtn" class="primary-btn" style="background-color: #ef4444;">This Instance
+                    Only</button>
+                <button id="deleteSeriesBtn" class="primary-btn" style="background-color: #dc2626;">All of This Series
+                    (Same Title)</button>
+                <button id="cancelDeleteBtn" class="secondary-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+
     <script src="script.js"></script>
 </body>
 
