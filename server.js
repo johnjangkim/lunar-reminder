@@ -19,10 +19,13 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-app.use((req, res, next) => {
-    log(`${req.method} ${req.url} - Body: ${JSON.stringify(req.body)}`);
-    next();
+app.get('/', (req, res) => {
+    log('Root path hit - serving index.html');
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
+
+// Serve other static files
+app.use(express.static(__dirname));
 
 // SQLite Database Setup
 const dbPath = path.join(__dirname, 'lunar_reminder.db');
