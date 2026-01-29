@@ -2,4 +2,6 @@ node_modules/
 .DS_Store
 .env
 lunar_reminder.db
+*.db-shm
+*.db-wal
 *.log
