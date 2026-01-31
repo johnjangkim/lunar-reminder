@@ -50,7 +50,6 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         console.log('Form submit triggered');
-        // alert('Submitting form...'); // Uncomment if user keeps saying it fails
         const idStr = document.getElementById('remId').value;
         const title = document.getElementById('remTitle').value;
         const type = document.querySelector('input[name="remType"]:checked').value;
@@ -68,27 +67,68 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             console.log('Saving reminder:', reminderData);
             let res;
-            if (idStr) {
-                // Edit existing
-                const id = parseInt(idStr);
-                res = await fetch(`${API_URL}/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(reminderData)
-                });
-            } else {
-                // Create new
-                const id = Date.now();
-                res = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...reminderData, id })
-                });
+            let isOffline = false;
+
+            try {
+                if (idStr) {
+                    // Edit existing
+                    const id = parseInt(idStr);
+                    res = await fetch(`${API_URL}/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(reminderData)
+                    });
+                } else {
+                    // Create new
+                    const id = Date.now();
+                    res = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...reminderData, id })
+                    });
+                }
+
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    // If 404/500, might be backend issue or offline. 
+                    // But if it's strictly network error, it goes to catch block below.
+                    // If server returns error, we might still want to try local? 
+                    // Usually "Failed to fetch" means network error.
+                    throw new Error(`Server error (${res.status}): ${errorText}`);
+                }
+            } catch (networkError) {
+                console.warn('Network/Server error, falling back to localStorage:', networkError);
+                isOffline = true;
             }
 
-            if (!res.ok) {
-                const errorText = await res.text();
-                throw new Error(`Server error (${res.status}): ${errorText}`);
+            if (isOffline) {
+                // FALLBACK: Save to LocalStorage
+                // Get most recent list from storage or memory
+                // We should re-fetch from storage to be safe, or use `reminders` state if confident
+                let localData = JSON.parse(localStorage.getItem('lunar_reminders')) || [];
+
+                if (idStr) {
+                    // Edit
+                    const id = parseInt(idStr);
+                    const index = localData.findIndex(r => r.id === id);
+                    if (index !== -1) {
+                        localData[index] = { ...localData[index], ...reminderData };
+                    } else {
+                        // Might have been a server reminder we are now editing offline?
+                        // If we can't find it in local, we should add it? 
+                        // Or maybe we treat it as new? 
+                        // For simplicity, let's assuming it exists if we are editing it.
+                        // Or if we can't find it, we just add it? No, that duplicates.
+                        // Let's safe-guard:
+                        localData.push({ ...reminderData, id });
+                    }
+                } else {
+                    // Create
+                    const id = Date.now();
+                    localData.push({ ...reminderData, id });
+                }
+                localStorage.setItem('lunar_reminders', JSON.stringify(localData));
+                alert('Backend unreachable. Saved to local browser storage.');
             }
 
             console.log('Save successful');
@@ -523,29 +563,74 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!reminderToDelete) return;
 
         try {
+            let isOffline = false;
+
             if (reminderToDelete.recurrence !== 'NONE') {
                 // If repeating, we add an exception instead of deleting the whole thing
                 if (!currentSelectedDateComponents) return;
 
                 if (!confirm(`Delete only this instance on ${currentSelectedDateComponents.year}-${currentSelectedDateComponents.month}-${currentSelectedDateComponents.day}?`)) return;
 
-                const res = await fetch(`${API_URL}/${reminderToDelete.id}/exceptions`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        year: currentSelectedDateComponents.year,
-                        month: currentSelectedDateComponents.month,
-                        day: currentSelectedDateComponents.day
-                    })
-                });
-                if (!res.ok) throw new Error('Failed to add exception');
-                alert('Instance removed from calendar.');
+                try {
+                    const res = await fetch(`${API_URL}/${reminderToDelete.id}/exceptions`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            year: currentSelectedDateComponents.year,
+                            month: currentSelectedDateComponents.month,
+                            day: currentSelectedDateComponents.day
+                        })
+                    });
+                    if (!res.ok) throw new Error('Failed to add exception');
+                    alert('Instance removed from calendar.');
+                } catch (networkError) {
+                    console.warn('Network error during exception addition, trying local:', networkError);
+                    isOffline = true;
+                }
+
+                if (isOffline) {
+                    let localData = JSON.parse(localStorage.getItem('lunar_reminders')) || [];
+                    const idx = localData.findIndex(r => r.id === reminderToDelete.id);
+                    if (idx !== -1) {
+                        if (!localData[idx].exceptions) localData[idx].exceptions = [];
+                        localData[idx].exceptions.push({
+                            year: currentSelectedDateComponents.year,
+                            month: currentSelectedDateComponents.month,
+                            day: currentSelectedDateComponents.day
+                        });
+                        localStorage.setItem('lunar_reminders', JSON.stringify(localData));
+                        alert('Backend unreachable. Exception saved locally.');
+                    }
+                }
+
             } else {
                 // Not repeating, delete the record entirely
                 if (!confirm(`Delete this instance of "${reminderToDelete.title}"?`)) return;
-                const res = await fetch(`${API_URL}/${reminderToDelete.id}`, { method: 'DELETE' });
-                const data = await res.json();
-                alert(`Instance deleted.`);
+
+                try {
+                    const res = await fetch(`${API_URL}/${reminderToDelete.id}`, { method: 'DELETE' });
+                    // if (!res.ok) ...
+                    // If server returns 404, maybe it's effectively deleted? But let's assume valid flow.
+                    if (!res.ok) throw new Error('Failed to delete on server');
+                    const data = await res.json();
+                    alert(`Instance deleted.`);
+                } catch (networkError) {
+                    console.warn('Network error during delete, trying local:', networkError);
+                    isOffline = true;
+                }
+
+                if (isOffline) {
+                    let localData = JSON.parse(localStorage.getItem('lunar_reminders')) || [];
+                    const initialLen = localData.length;
+                    localData = localData.filter(r => r.id !== reminderToDelete.id);
+                    if (localData.length < initialLen) {
+                        localStorage.setItem('lunar_reminders', JSON.stringify(localData));
+                        alert('Backend unreachable. Item deleted locally.');
+                    } else {
+                        // Maybe it wasn't in local storage?
+                        alert('Backend unreachable. Item not found locally either.');
+                    }
+                }
             }
 
             await fetchReminders();
@@ -561,13 +646,34 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!reminderToDelete) return;
         if (!confirm(`Are you sure you want to delete ALL instances of "${reminderToDelete.title}"?`)) return;
         try {
-            const res = await fetch(`${API_URL}/by-title/${encodeURIComponent(reminderToDelete.title)}`, { method: 'DELETE' });
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.error || 'Server error');
+            let isOffline = false;
+            try {
+                const res = await fetch(`${API_URL}/by-title/${encodeURIComponent(reminderToDelete.title)}`, { method: 'DELETE' });
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || 'Server error');
+                }
+                const data = await res.json();
+                alert(`Successfully deleted ${data.count} items in the series.`);
+            } catch (networkError) {
+                console.warn('Network error during series delete, trying local:', networkError);
+                isOffline = true;
             }
-            const data = await res.json();
-            alert(`Successfully deleted ${data.count} items in the series.`);
+
+            if (isOffline) {
+                let localData = JSON.parse(localStorage.getItem('lunar_reminders')) || [];
+                const initialLen = localData.length;
+                // Delete by title match
+                localData = localData.filter(r => r.title !== reminderToDelete.title);
+
+                if (localData.length < initialLen) {
+                    localStorage.setItem('lunar_reminders', JSON.stringify(localData));
+                    alert(`Backend unreachable. Deleted ${initialLen - localData.length} items locally.`);
+                } else {
+                    alert('Backend unreachable. No items with that title found locally.');
+                }
+            }
+
             await fetchReminders();
             deleteChoiceModal.classList.remove('show');
             closeDayModalFunc();
